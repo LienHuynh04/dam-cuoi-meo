@@ -581,6 +581,48 @@ export const GAME = {
       (a: string, b: string) => `M: ${a} vừa hỏi MC: ${b} có người yêu chưa? | Câu này để ${b} tự trả lời nha.`,
     ],
   },
+
+  // ---------- Tự dẫn chương trình: chủ kênh KHÔNG cần bấm điều khiển ----------
+  // Game vốn đã tự chạy sẵn: đám cưới dàn khách quen khi phòng vắng, DJ mỗi ~6 phút, sự kiện bất ngờ
+  // mỗi 3–5 phút, Nguyệt Lão Mèo se duyên, mai mối, tuyển nhân viên. Phần này bổ sung vòng sự kiện
+  // party / mưa hoa hồng / xe hoa CÓ BÁO TRƯỚC (MC nói + băng rôn đếm ngược trên sân khấu) để người
+  // xem biết sắp có gì và cách tham gia, cộng vòng nhắc cách chơi cho người mới vào.
+  host: {
+    firstAfterMs: 45_000, // tiết mục tự dẫn đầu tiên sau ~45 giây mở stage
+    everyMinMs: 150_000,
+    everyMaxMs: 240_000,
+    teaseLeadMs: 12_000, // báo trước 12 giây rồi mới diễn ra
+    howToEveryMs: 300_000, // nhắc cách chơi mỗi ~5 phút khi sảnh rảnh
+  },
+  // MC báo trước tiết mục sắp diễn ra (chỉ nêu luật/cách tham gia trung tính)
+  hostTease: {
+    party: [
+      `M: Cả nhà chuẩn bị nha, mười giây nữa là cả sảnh mình quẩy tưng bừng ăn mừng. | Ai muốn lên sân khấu nhảy thì gõ chữ quẩy nha.`,
+      `F: Sắp tới giờ quẩy rồi bà con ơi. | Ai gõ chữ quẩy là được lên sân khấu nhảy cùng cô dâu mèo chú rể mèo đó.`,
+    ],
+    roses: [
+      `F: Mười giây nữa sẽ có một cơn mưa hoa hồng rơi xuống sảnh cưới đó bà con. | Cả nhà chuẩn bị ngắm hoa rơi nha.`,
+      `M: Sắp có mưa hoa hồng rồi. | Hoa rơi khắp sảnh, ai đang xem thì ở lại ngắm chút nha.`,
+    ],
+    car: [
+      `M: Xe hoa sắp chạy qua sảnh rồi bà con ơi. | Mười giây nữa, cả nhà nhìn ra cổng đón xe hoa nha.`,
+      `F: Chuẩn bị đón xe hoa nè. | Xe hoa của sảnh mình sắp chạy qua cổng đó.`,
+    ],
+  } as Record<string, string[]>,
+  // băng rôn đếm ngược trên sân khấu: [tiêu đề, dòng phụ]
+  hostBanner: {
+    party: ['🎉 SẮP QUẨY CẢ SẢNH', 'Gõ QUẨY để lên sân khấu nhảy'],
+    roses: ['🌹 SẮP CÓ MƯA HOA HỒNG', 'Hoa hồng rơi khắp sảnh cưới'],
+    car: ['🚗 XE HOA SẮP QUA SẢNH', 'Cả nhà nhìn ra cổng nha'],
+  } as Record<string, [string, string]>,
+  // MC lần lượt nhắc cách chơi cho người mới vào (khi sảnh rảnh)
+  howTo: [
+    `M: Người mới vào nghe MC dặn nè: muốn cầu hôn ai thì gõ cưới vợ, hoặc cưới chồng, rồi a còng tên tài khoản của người ấy. | Người được hỏi gõ đồng ý là hai bạn lên lễ đường liền.`,
+    `F: Khi Nguyệt Lão Mèo xuống sảnh, băng rôn đỏ hiện lên, cả nhà gõ se duyên để ông nối tơ hồng ngẫu nhiên cho hai người.`,
+    `M: Đang có lễ cưới mà thấy không hợp, cả nhà gõ tranh duyên để mở PK tranh duyên. | Phe nào nhiều điểm hơn thì thắng, một comment một điểm, một xu quà mười điểm.`,
+    `F: Muốn lên sân khấu nhảy cùng cô dâu mèo chú rể mèo, cả nhà chỉ cần gõ chữ quẩy. | Còn gõ chữ zô là nâng ly chúc mừng ngay tại bàn tiệc.`,
+    `M: Sau mỗi đám cưới có bảng bình chọn đẹp đôi: gõ số một là hợp, số hai là không hợp. | Cặp nào được trên bảy mươi phần trăm là có pháo hoa ăn mừng.`,
+  ],
 };
 
 function cap(s: string) {

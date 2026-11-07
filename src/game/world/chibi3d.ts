@@ -5,7 +5,7 @@ import { hash } from './tags';
 
 export type Body = 'suit' | 'shirt' | 'dress' | 'aodaiM' | 'aodaiF' | 'gown' | 'princess' | 'mermaid' | 'shortGown' | 'shorts';
 export type HairStyle = 'short' | 'sidePart' | 'buzz' | 'long' | 'ponytail' | 'bun' | 'bob';
-export type Hat = 'none' | 'veil' | 'tiara' | 'veilTiara' | 'khanVan' | 'khanXep' | 'headphones' | 'cap' | 'bun';
+export type Hat = 'none' | 'veil' | 'tiara' | 'veilTiara' | 'khanVan' | 'khanXep' | 'headphones' | 'cap' | 'bun' | 'flowerCrown';
 
 export interface Look {
   body: Body;
@@ -20,6 +20,8 @@ export interface Look {
   hat: Hat;
   flower?: boolean; // hoa cài áo chú rể
   beard?: boolean; // râu bạc (Nguyệt Lão)
+  glasses?: boolean; // kính mắt (khách, như ảnh mẫu có mèo đeo kính)
+  pearl?: boolean; // vòng cổ ngọc trai (khách nữ, như ảnh mẫu)
   age?: 'kid' | 'old'; // trẻ con (người nhỏ) / bà cụ (lưng còng)
 }
 
@@ -55,7 +57,7 @@ export const WEDDING_SETS: WeddingSet[] = [
   {
     name: 'Dễ thương',
     groom: { body: 'suit', main: '#9aa3ad', pants: '#9aa3ad', accent: '#f49ab2', shoes: '#2b2b2b', flower: true, longHair: false, hairStyle: 'sidePart' },
-    bride: { body: 'princess', main: '#f7b6c8', accent: '#ffffff', hat: 'veilTiara', longHair: true, hairStyle: 'bun' },
+    bride: { body: 'princess', main: '#f7b6c8', accent: '#ffffff', hat: 'flowerCrown', longHair: true, hairStyle: 'bun' },
   },
   {
     name: 'Bựa',
@@ -82,25 +84,31 @@ const JEANS = ['#3b5b8c', '#2f4a73', '#1f2f4d', '#2b2b2b', '#e9e4da', '#4a6fa5']
 const CLOTHES = ['#f49ab2', '#7ec8e3', '#ffd166', '#06d6a0', '#ef476f', '#8338ec', '#ff9f1c', '#a7c957', '#e9edc9', '#90e0ef', '#ffafcc', '#cdb4db'];
 const PANTS = ['#2b2d42', '#3d405b', '#e9e4da', '#1d3557', '#6d6875'];
 
+// vest khách nam theo ảnh mẫu: đen, navy, xám đậm — đi tiệc cưới là phải lịch sự
+const SUITS = ['#1d1d24', '#1f2f5c', '#2b2b2b', '#23272e', '#3a2a3a', '#14213d'];
+const BOWTIES = ['#111111', '#7a1020', '#1f2f5c', '#f6c453', '#5b3156'];
+
 /** Khách mời: cùng username luôn ra cùng ngoại hình. `fem` ép giới tính (dàn khách quen theo tên), không có thì ngẫu nhiên */
 export function guestLook(id: string, fem?: boolean): Look {
   const h = hash(id);
   const r = (n: number, k: number) => Math.floor(((h >>> (k * 3)) % 1000) / 1000 * n);
   const f = fem ?? r(2, 1) === 1;
-  // phần lớn mặc áo thun + quần jean như đám đông ngoài đời; có thêm sơ mi/vest, váy, áo dài
-  const kind = (f ? ['shirt', 'shirt', 'dress', 'aodaiF', 'shirt'] : ['shirt', 'shirt', 'shirt', 'suit'])[r(f ? 5 : 4, 10)] as Body;
+  // như ảnh mẫu: khách nam phần lớn vest tối + nơ, khách nữ váy/áo dài pastel, thỉnh thoảng có kính / vòng ngọc
+  const kind = (f ? ['dress', 'dress', 'aodaiF', 'shirt'] : ['suit', 'suit', 'suit', 'shirt'])[r(4, 10)] as Body;
   const tee = kind === 'shirt';
   return {
     body: kind,
-    main: tee ? TEES[r(TEES.length, 2)] : CLOTHES[r(CLOTHES.length, 2)],
-    pants: tee ? JEANS[r(JEANS.length, 3)] : PANTS[r(PANTS.length, 3)],
-    accent: CLOTHES[r(CLOTHES.length, 4)],
+    main: tee ? TEES[r(TEES.length, 2)] : kind === 'suit' ? SUITS[r(SUITS.length, 2)] : CLOTHES[r(CLOTHES.length, 2)],
+    pants: tee ? JEANS[r(JEANS.length, 3)] : kind === 'suit' ? '#17171c' : PANTS[r(PANTS.length, 3)],
+    accent: kind === 'suit' ? BOWTIES[r(BOWTIES.length, 4)] : CLOTHES[r(CLOTHES.length, 4)],
     shoes: '#2b2b2b',
     skin: SKINS[r(SKINS.length, 5)],
     hair: r(10, 6) < 2 ? DYED[r(DYED.length, 7)] : HAIRS[r(HAIRS.length, 8)],
     longHair: f,
     hairStyle: (f ? ['long', 'ponytail', 'bun', 'bob', 'long'] : ['short', 'sidePart', 'buzz', 'short'])[r(f ? 5 : 4, 9)] as HairStyle,
     hat: 'none',
+    glasses: r(10, 11) < 1,
+    pearl: f && r(10, 12) < 3,
   };
 }
 
@@ -153,9 +161,14 @@ const G = {
   ear: new THREE.ConeGeometry(0.115, 0.25, 4),
   earIn: new THREE.ConeGeometry(0.06, 0.14, 4),
   whisker: new THREE.BoxGeometry(0.11, 0.008, 0.008),
-  catTail: new THREE.CylinderGeometry(0.028, 0.045, 0.52, 7),
+  catTail: new THREE.CylinderGeometry(0.04, 0.062, 0.6, 7),
   longHair: new THREE.CylinderGeometry(0.21, 0.24, 0.62, 14),
-  eye: new THREE.SphereGeometry(0.031, 8, 6),
+  eye: new THREE.SphereGeometry(0.045, 8, 6),
+  eyeHi: new THREE.SphereGeometry(0.016, 6, 5),
+  cheekFluff: new THREE.SphereGeometry(0.115, 8, 6),
+  mouth: new THREE.SphereGeometry(0.05, 8, 6),
+  glassRim: new THREE.TorusGeometry(0.075, 0.013, 6, 14),
+  pearl: new THREE.TorusGeometry(0.13, 0.021, 6, 16),
   smile: new THREE.TorusGeometry(0.045, 0.012, 4, 10, Math.PI),
   cheek: new THREE.CircleGeometry(0.04, 10),
   arm: new THREE.CapsuleGeometry(0.045, 0.3, 4, 8),
@@ -233,6 +246,7 @@ export class Chibi {
   private phase = Math.random() * 10;
 
   private catTail: THREE.Group | null = null; // đuôi mèo, dựng trong build(), vẫy trong update()
+  private mouthOpen: THREE.Mesh | null = null; // miệng há khi cười/nói/hô, ẩn hiện trong update()
   private scale: number;
   lean = 1; // trêu / đấm về phía nào (+1 phải, -1 trái)
   bowStart = -99; // lúc bắt đầu cúi lạy (giây, theo đồng hồ của world)
@@ -250,14 +264,14 @@ export class Chibi {
     this.armR.position.set(0.185, 0.87, 0);
     this.legL.position.set(-0.075, LEG, 0);
     this.legR.position.set(0.075, LEG, 0);
-    this.head.scale.setScalar(0.74); // đầu nhỏ lại cho ra dáng người thật hơn
+    this.head.scale.setScalar(0.95); // đầu mèo to tròn như ảnh mẫu (mèo Anh mặt bánh bao)
     this.build();
   }
 
   /** đỉnh tóc (toạ độ thế giới), theo cả lúc ngồi / nhảy, để bảng tên nằm sát trên đầu */
   headTop(out: THREE.Vector3) {
     this.head.getWorldPosition(out);
-    out.y += 0.27 * this.scale;
+    out.y += 0.34 * this.scale;
     return out;
   }
 
@@ -301,7 +315,7 @@ export class Chibi {
     if (this.catTail) this.catTail.removeFromParent();
     {
       const g = new THREE.Group();
-      const t = mesh(G.catTail, L.hair, 0, 0.26, 0);
+      const t = mesh(G.catTail, L.hair, 0, 0.3, 0);
       g.add(t);
       g.position.set(0, 0.5, -0.17);
       g.rotation.x = -0.75; // chĩa ra sau, ngóc lên
@@ -374,6 +388,12 @@ export class Chibi {
         break;
     }
     if (['gown', 'princess', 'mermaid', 'shortGown', 'dress'].includes(L.body)) sleeve = L.skin;
+    // vòng cổ ngọc trai cho khách nữ (như ảnh mẫu), đeo ở cổ áo
+    if (L.pearl) {
+      const p = mesh(G.pearl, '#f8f4ec', 0, 0.7, 0.1);
+      p.rotation.x = 0.55;
+      o.add(p);
+    }
     // tay
     for (const arm of [this.armL, this.armR]) {
       arm.add(mesh(G.arm, sleeve, 0, -0.19, 0));
@@ -383,6 +403,8 @@ export class Chibi {
     const h = this.head;
     h.position.y = 1.18;
     h.add(mesh(G.head, L.skin));
+    // má lông phồng 2 bên cho mặt tròn bánh bao như mèo trong ảnh mẫu
+    for (const sx of [-1, 1]) h.add(mesh(G.cheekFluff, L.skin, sx * 0.16, -0.08, 0.13));
     // tóc: nam tóc ngắn / rẽ ngôi / đầu đinh, nữ tóc dài / đuôi ngựa / búi / bob
     const style: HairStyle = L.hairStyle ?? (L.longHair ? 'long' : 'short');
     const cap = (g: THREE.BufferGeometry, rx: number) => {
@@ -408,13 +430,26 @@ export class Chibi {
       }
       if (style === 'bun') h.add(mesh(G.bun, L.hair, 0, 0.2, -0.2));
     }
-    h.add(mesh(G.eye, '#1a1a1a', -0.09, 0.0, 0.24));
-    h.add(mesh(G.eye, '#1a1a1a', 0.09, 0.0, 0.24));
-    h.add(mesh(G.brow, L.age === 'old' ? '#bdbdbd' : '#2a1c16', -0.09, 0.065, 0.245), mesh(G.brow, L.age === 'old' ? '#bdbdbd' : '#2a1c16', 0.09, 0.065, 0.245));
+    // mắt to tròn long lanh (có đốm sáng) như mèo trong ảnh mẫu
+    h.add(mesh(G.eye, '#1a1a1a', -0.09, 0.0, 0.235));
+    h.add(mesh(G.eye, '#1a1a1a', 0.09, 0.0, 0.235));
+    h.add(mesh(G.eyeHi, '#ffffff', -0.075, 0.02, 0.27));
+    h.add(mesh(G.eyeHi, '#ffffff', 0.105, 0.02, 0.27));
+    h.add(mesh(G.brow, L.age === 'old' ? '#bdbdbd' : '#2a1c16', -0.09, 0.075, 0.245), mesh(G.brow, L.age === 'old' ? '#bdbdbd' : '#2a1c16', 0.09, 0.075, 0.245));
+    if (L.glasses) {
+      for (const sx of [-1, 1]) h.add(mesh(G.glassRim, '#2b2b30', sx * 0.09, 0.0, 0.26));
+      h.add(mesh(G.brow, '#2b2b30', 0, 0.01, 0.26));
+    }
     h.add(mesh(G.nose, '#ff8fab', 0, -0.035, 0.265)); // mũi mèo hồng
     const smile = mesh(G.smile, '#7a2e2e', 0, -0.085, 0.245);
     smile.rotation.z = Math.PI;
     h.add(smile);
+    // miệng há (cười to / nói / hô dô): update() bật theo pose, mặc định ẩn
+    const mo = mesh(G.mouth, '#8e2f32', 0, -0.12, 0.235);
+    mo.scale.set(1, 1.25, 0.45);
+    mo.visible = false;
+    h.add(mo);
+    this.mouthOpen = mo as THREE.Mesh;
     const ck1 = mesh(G.cheek, '#ff9fb2', -0.16, -0.06, 0.2, 0.4);
     const ck2 = mesh(G.cheek, '#ff9fb2', 0.16, -0.06, 0.2, 0.4);
     ck1.rotation.y = -0.6;
@@ -450,6 +485,22 @@ export class Chibi {
       t.rotation.x = -0.3;
       h.add(t);
     }
+    if (L.hat === 'flowerCrown') {
+      // vòng hoa đội đầu như cô dâu mèo trong ảnh mẫu: hoa trắng/hồng xen lá xanh chạy vòng cung trên trán
+      for (let i = 0; i <= 6; i++) {
+        const a = (i / 6) * Math.PI;
+        const fx = Math.cos(a) * 0.19;
+        const fy = 0.13 + Math.sin(a) * 0.14;
+        const fl = mesh(G.flower, ['#ffffff', '#ffc2d1', '#ff8fab'][i % 3], fx, fy, 0.12);
+        fl.scale.setScalar(1.7);
+        h.add(fl);
+        if (i % 2 === 0) {
+          const lf = mesh(G.flower, '#5f8f4e', fx * 0.92, fy - 0.03, 0.1);
+          lf.scale.setScalar(1.4);
+          h.add(lf);
+        }
+      }
+    }
     if (L.hat === 'khanVan') {
       const k = mesh(G.khanVan, L.accent === '#f6c453' ? '#d4a017' : L.main, 0, 0.13, 0);
       k.rotation.x = Math.PI / 2 - 0.2;
@@ -483,6 +534,8 @@ export class Chibi {
     this.legL.rotation.set(0, 0, 0);
     this.legR.rotation.set(0, 0, 0);
     const sw = Math.sin(p * 9);
+    // miệng há khi cười to / nói chuyện / hô dô / hoan hô cho sống động như khách mèo trong ảnh
+    if (this.mouthOpen) this.mouthOpen.visible = pose === 'laugh' || pose === 'cheer' || pose === 'zo' || pose === 'talk';
     // đuôi mèo vẫy liên tục, vui (nhảy/hoan hô) thì vẫy nhanh và mạnh hơn
     if (this.catTail) {
       const excited = pose === 'dance' || pose === 'cheer' || pose === 'zo' || pose === 'jump';

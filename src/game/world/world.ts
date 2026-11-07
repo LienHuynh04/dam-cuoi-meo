@@ -61,7 +61,7 @@ class World {
   private camera = new THREE.PerspectiveCamera(46, W / H, 0.1, 120);
   private camPos = v(0, 10.5, 12.5);
   private camLook = v(0, 0, -15);
-  private hemi = new THREE.HemisphereLight('#ffe6d2', '#8a6c9a', HEMI_I);
+  private hemi = new THREE.HemisphereLight('#ffe6d2', '#b09a7a', HEMI_I);
   private sun = new THREE.DirectionalLight('#ffd2a8', SUN_I);
   private guests = new Map<string, Guest>();
   private npcs: Guest[] = [];
@@ -127,8 +127,8 @@ class World {
 
   constructor() {
     const s = this.scene;
-    s.background = new THREE.Color('#120c1e');
-    s.fog = new THREE.Fog('#120c1e', 34, 70);
+    s.background = new THREE.Color('#e9d8bc');
+    s.fog = new THREE.Fog('#e9d8bc', 34, 70);
     s.add(this.hemi);
     const sun = this.sun; // buổi tối: đèn trần ấm thay cho nắng chiều
     sun.position.set(4, 12, 10);

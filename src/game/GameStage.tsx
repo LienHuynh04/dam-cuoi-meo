@@ -22,10 +22,10 @@ export function GameStage({ game }: { game: GameState }) {
   const [, tick] = useState(0);
   const v = game.view;
   useEffect(() => {
-    if (v?.phase !== 'proposal' && !game.duyen && !game.vote && !game.pk) return;
+    if (v?.phase !== 'proposal' && !game.duyen && !game.vote && !game.pk && !game.announce) return;
     const t = setInterval(() => tick((x) => x + 1), 500);
     return () => clearInterval(t);
-  }, [v?.phase, !!game.duyen, !!game.vote]);
+  }, [v?.phase, !!game.duyen, !!game.vote, !!game.announce]);
   const left = v ? Math.max(0, Math.ceil((v.until - Date.now()) / 1000)) : 0;
   const likePct = Math.min(100, (game.likeProgress / game.likeNext) * 100);
   const canSteal = v && v.phase === 'proposal' && !v.pkDone;
@@ -165,6 +165,14 @@ export function GameStage({ game }: { game: GameState }) {
         <div className="dc-steal dc-vote">
           💘 Hợp không? Gõ <b>1</b> HỢP · <b>2</b> KHÔNG · {Math.max(0, Math.ceil((game.vote.until - Date.now()) / 1000))}s
           {game.vote.yes + game.vote.no > 0 && <> · {Math.round((game.vote.yes / (game.vote.yes + game.vote.no)) * 100)}% hợp</>}
+        </div>
+      )}
+
+      {/* Tự dẫn: băng rôn báo trước tiết mục sắp diễn ra + cách tham gia (người xem biết trước sẽ có gì) */}
+      {game.announce && (
+        <div className="dc-steal dc-auto">
+          {game.announce.title} · {Math.max(0, Math.ceil((game.announce.until - 5000 - Date.now()) / 1000))}s
+          <small>{game.announce.sub}</small>
         </div>
       )}
 

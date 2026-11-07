@@ -1,4 +1,5 @@
-// Sảnh tiệc cưới 3D: sàn, thảm đỏ, bàn tròn trắng 10 ghế, sân khấu + cổng hoa, phông chữ.
+// Sảnh tiệc cưới 3D: sàn, lối đi trắng kem rải cánh hoa, bàn tròn trắng 10 ghế, sân khấu + cổng hoa, phông chữ.
+// Tông sáng ấm như ảnh mẫu của chủ kênh (2026-11-07): kem/trắng/vàng nắng, hoa hồng trắng + hồng pastel.
 // Đồ tĩnh gộp chung 1 khối mỗi màu để vẽ nhanh (ít lệnh vẽ).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -42,46 +43,53 @@ TABLE_ZS.forEach((z) =>
 export const STANDING: { x: number; z: number; taken: string | null }[] = [];
 for (let z = 6; z > -16; z -= 1.1) for (const x of [-10.6, -11.6, 10.6, 11.6]) STANDING.push({ x, z, taken: null });
 
-/** Trời đêm vẽ bằng canvas: xanh đen trên cao, tím than ở chân trời, sao, trăng và ánh đèn thành phố */
-function nightTexture(withMoon: boolean) {
+/** Trời ngày nắng ấm vẽ bằng canvas (như ảnh mẫu): nền kem sáng, quầng nắng, bokeh lung linh, cây xanh mờ ở chân cửa */
+function dayTexture(withSun: boolean) {
   const c = document.createElement('canvas');
   c.width = 1024;
   c.height = 512;
   const x = c.getContext('2d')!;
   const g = x.createLinearGradient(0, 0, 0, 512);
-  g.addColorStop(0, '#05060f');
-  g.addColorStop(0.5, '#0d1030');
-  g.addColorStop(0.85, '#22183f');
-  g.addColorStop(1, '#3a2347');
+  g.addColorStop(0, '#fff8e6');
+  g.addColorStop(0.55, '#ffedc9');
+  g.addColorStop(1, '#ffd9a3');
   x.fillStyle = g;
   x.fillRect(0, 0, 1024, 512);
-  // sao
-  for (let i = 0; i < 160; i++) {
-    const r = ((i * 7919) % 1000) / 1000;
-    x.fillStyle = `rgba(255,255,255,${0.35 + r * 0.6})`;
-    x.fillRect((i * 389) % 1024, (i * 211) % 330, r < 0.85 ? 2 : 3, r < 0.85 ? 2 : 3);
+  // bokeh sáng lung linh
+  for (let i = 0; i < 70; i++) {
+    const px = (i * 389) % 1024;
+    const py = (i * 211) % 400;
+    const pr = 6 + ((i * 37) % 22);
+    const s = x.createRadialGradient(px, py, 1, px, py, pr);
+    s.addColorStop(0, `rgba(255,255,255,${0.16 + ((i * 13) % 10) / 40})`);
+    s.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = s;
+    x.beginPath();
+    x.arc(px, py, pr, 0, Math.PI * 2);
+    x.fill();
   }
-  if (withMoon) {
-    const s = x.createRadialGradient(780, 110, 6, 780, 110, 120);
-    s.addColorStop(0, 'rgba(255,250,230,1)');
-    s.addColorStop(0.28, 'rgba(255,245,215,0.95)');
-    s.addColorStop(0.32, 'rgba(200,210,255,0.25)');
-    s.addColorStop(1, 'rgba(200,210,255,0)');
+  if (withSun) {
+    const s = x.createRadialGradient(780, 110, 6, 780, 110, 170);
+    s.addColorStop(0, 'rgba(255,252,235,1)');
+    s.addColorStop(0.3, 'rgba(255,240,200,0.85)');
+    s.addColorStop(1, 'rgba(255,240,200,0)');
     x.fillStyle = s;
     x.fillRect(0, 0, 1024, 512);
   }
-  // ánh đèn thành phố xa ở chân trời
-  for (let i = 0; i < 90; i++) {
-    x.fillStyle = i % 3 ? 'rgba(255,214,140,0.7)' : 'rgba(255,170,200,0.55)';
-    x.fillRect((i * 557) % 1024, 470 + ((i * 37) % 36), 3, 3);
-  }
-  // khung cửa kính
-  x.strokeStyle = 'rgba(230,225,240,0.55)';
-  x.lineWidth = 6;
-  for (let i = 1; i < (withMoon ? 6 : 2); i++) {
+  // cây xanh mờ ở chân cửa kính
+  for (let i = 0; i < 40; i++) {
+    x.fillStyle = `rgba(140,170,110,${0.1 + ((i * 7) % 10) / 50})`;
     x.beginPath();
-    x.moveTo((1024 / (withMoon ? 6 : 2)) * i, 0);
-    x.lineTo((1024 / (withMoon ? 6 : 2)) * i, 512);
+    x.ellipse((i * 293) % 1024, 452 + ((i * 41) % 60), 46 + ((i * 17) % 40), 26, 0, 0, Math.PI * 2);
+    x.fill();
+  }
+  // khung cửa kính viền vàng nhạt
+  x.strokeStyle = 'rgba(190,160,110,0.5)';
+  x.lineWidth = 6;
+  for (let i = 1; i < (withSun ? 6 : 2); i++) {
+    x.beginPath();
+    x.moveTo((1024 / (withSun ? 6 : 2)) * i, 0);
+    x.lineTo((1024 / (withSun ? 6 : 2)) * i, 512);
     x.stroke();
   }
   const t = new THREE.CanvasTexture(c);
@@ -101,23 +109,30 @@ export function buildHall(scene: THREE.Scene) {
     parts.set(color, list);
   };
 
-  // sàn đá kem + thảm đỏ + viền vàng
+  // sàn đá kem + lối đi TRẮNG KEM viền vàng nhạt + cánh hoa hồng rải (như ảnh mẫu, không còn thảm đỏ)
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 44), mat('#efe3d3'));
   floor.rotation.x = -Math.PI / 2;
   floor.position.z = -6;
   scene.add(floor);
-  put('#b3122e', new THREE.BoxGeometry(AISLE_HALF * 2, 0.02, GATE_Z - STAGE_FRONT + 1), 0, 0.01, (GATE_Z + STAGE_FRONT) / 2);
-  for (const sx of [-1, 1]) put('#e6e9ef', new THREE.BoxGeometry(0.08, 0.025, GATE_Z - STAGE_FRONT + 1), sx * AISLE_HALF, 0.012, (GATE_Z + STAGE_FRONT) / 2);
-
-  // tường xanh navy đêm + cột bạc + nẹp bạc (sang, không 1 tông hồng)
-  put('#3e2747', new THREE.BoxGeometry(30, 9, 0.3), 0, 4.5, -27.5);
-  for (const sx of [-1, 1]) {
-    put('#4a2f52', new THREE.BoxGeometry(0.3, 9, 44), sx * 13.5, 4.5, -6);
-    put('#dfe3ea', new THREE.BoxGeometry(0.1, 0.12, 44), sx * 13.3, 1.1, -6);
-    put('#dfe3ea', new THREE.BoxGeometry(0.1, 0.12, 44), sx * 13.3, 7.6, -6);
-    for (let z = 10; z > -27; z -= 4) put('#c4cad4', new THREE.BoxGeometry(0.2, 9, 0.35), sx * 13.3, 4.5, z);
+  put('#f8f2e4', new THREE.BoxGeometry(AISLE_HALF * 2, 0.02, GATE_Z - STAGE_FRONT + 1), 0, 0.01, (GATE_Z + STAGE_FRONT) / 2);
+  for (const sx of [-1, 1]) put('#e8d9b0', new THREE.BoxGeometry(0.08, 0.025, GATE_Z - STAGE_FRONT + 1), sx * AISLE_HALF, 0.012, (GATE_Z + STAGE_FRONT) / 2);
+  const petalGeo = new THREE.SphereGeometry(0.055, 6, 4);
+  petalGeo.scale(1, 0.25, 1.4);
+  for (let i = 0; i < 120; i++) {
+    const px = Math.sin(i * 127.1) * (AISLE_HALF - 0.15) * ((i * 37) % 10) / 9;
+    const pz = STAGE_FRONT + 0.4 + ((i * 269) % 100) / 100 * (GATE_Z - STAGE_FRONT - 0.8);
+    put(['#ffc2d1', '#ffffff', '#ff8fab', '#ffe5ec'][i % 4], petalGeo, px, 0.028, pz, (i * 53) % 3);
   }
-  for (const x of [-14, -9.5, 9.5, 14]) put('#c4cad4', new THREE.BoxGeometry(0.4, 9, 0.2), x, 4.5, -27.3);
+
+  // tường kem ấm + cột vàng nhạt (tông sáng như sảnh trong ảnh mẫu)
+  put('#e7d7bd', new THREE.BoxGeometry(30, 9, 0.3), 0, 4.5, -27.5);
+  for (const sx of [-1, 1]) {
+    put('#dfcdb0', new THREE.BoxGeometry(0.3, 9, 44), sx * 13.5, 4.5, -6);
+    put('#d9c39a', new THREE.BoxGeometry(0.1, 0.12, 44), sx * 13.3, 1.1, -6);
+    put('#d9c39a', new THREE.BoxGeometry(0.1, 0.12, 44), sx * 13.3, 7.6, -6);
+    for (let z = 10; z > -27; z -= 4) put('#d9c39a', new THREE.BoxGeometry(0.2, 9, 0.35), sx * 13.3, 4.5, z);
+  }
+  for (const x of [-14, -9.5, 9.5, 14]) put('#d9c39a', new THREE.BoxGeometry(0.4, 9, 0.2), x, 4.5, -27.3);
 
   // bàn tròn trắng + 10 ghế trắng + đĩa + bình hoa
   const tableTop = new THREE.CylinderGeometry(1.05, 1.05, 0.05, 28);
@@ -147,7 +162,7 @@ export function buildHall(scene: THREE.Scene) {
       const a = (i / 7) * Math.PI * 2;
       put(i % 2 ? '#ff8fab' : '#ffffff', bloom, t.x + Math.sin(a) * 0.12, 1.1 + (i % 3) * 0.03, t.z + Math.cos(a) * 0.12);
     }
-    put('#ff4d6d', bloom, t.x, 1.18, t.z);
+    put('#ffb3c6', bloom, t.x, 1.18, t.z);
     for (let i = 0; i < SEATS_PER_TABLE; i++) {
       const a = (i / SEATS_PER_TABLE) * Math.PI * 2 + 0.31;
       put('#dfe3ea', charger, t.x + Math.sin(a) * 0.78, 0.778, t.z + Math.cos(a) * 0.78);
@@ -165,9 +180,9 @@ export function buildHall(scene: THREE.Scene) {
       put('#c4cad4', leg, s.x + dx, 0.22, s.z + dz);
   }
 
-  // sân khấu: mặt trắng, thân navy, viền bạc, bậc thềm
+  // sân khấu: mặt trắng, thân vàng nâu ấm, viền bạc, bậc thềm
   put('#ffffff', new THREE.BoxGeometry(16, 0.08, 7.6), 0, STAGE_Y - 0.04, -23.4);
-  put('#5b3156', new THREE.BoxGeometry(16, STAGE_Y - 0.08, 7.6), 0, (STAGE_Y - 0.08) / 2, -23.4);
+  put('#b49b72', new THREE.BoxGeometry(16, STAGE_Y - 0.08, 7.6), 0, (STAGE_Y - 0.08) / 2, -23.4);
   put('#dfe3ea', new THREE.BoxGeometry(16.1, 0.07, 0.1), 0, STAGE_Y - 0.04, STAGE_FRONT + 0.02);
   put('#dfe3ea', new THREE.BoxGeometry(16.1, 0.05, 0.1), 0, 0.06, STAGE_FRONT + 0.02);
   put('#ffffff', new THREE.BoxGeometry(3, 0.3, 0.7), 0, 0.15, STAGE_FRONT + 0.35);
@@ -301,6 +316,12 @@ export function buildHall(scene: THREE.Scene) {
   }
   chand.position.set(0, 7.6, STAGE_Z);
   scene.add(chand);
+  // thêm 2 đèn chùm giữa sảnh như ảnh mẫu (bản gốc chỉ có 1 trên sân khấu)
+  for (const cz of [-6, 5]) {
+    const c2 = chand.clone();
+    c2.position.set(0, 7.6, cz);
+    scene.add(c2);
+  }
 
   // rèm đèn sau sân khấu (đèn nháy li ti)
   const lights = new THREE.BufferGeometry();
@@ -315,12 +336,12 @@ export function buildHall(scene: THREE.Scene) {
   lights.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
   const fairy = new THREE.Points(lights, new THREE.PointsMaterial({ color: '#ffe9cf', size: 0.09 }));
 
-  // cửa kính lớn sau sân khấu + 2 bên tường: trời đêm có trăng sao
-  const sky = nightTexture(true);
+  // cửa kính lớn sau sân khấu + 2 bên tường: trời ngày nắng ấm như ảnh mẫu
+  const sky = dayTexture(true);
   const skyWin = new THREE.Mesh(new THREE.PlaneGeometry(30, 9), new THREE.MeshBasicMaterial({ map: sky }));
   skyWin.position.set(0, 4.5, -27.34);
   scene.add(skyWin);
-  const sideTex = nightTexture(false);
+  const sideTex = dayTexture(false);
   for (const sx of [-1, 1]) {
     for (let z = 6; z > -24; z -= 8) {
       const win = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 5.4), new THREE.MeshBasicMaterial({ map: sideTex }));
@@ -344,21 +365,60 @@ export function buildHall(scene: THREE.Scene) {
     const c = cv.getContext('2d')!;
     c.clearRect(0, 0, 1024, 512);
     c.textAlign = 'center';
-    c.fillStyle = '#ffffff';
+    c.fillStyle = '#d61c4e';
     c.font = '800 120px "Be Vietnam Pro", serif';
     c.fillText('囍', 512, 140);
     c.font = '800 92px "Be Vietnam Pro", sans-serif';
-    c.fillStyle = '#f2f4f8';
+    c.fillStyle = '#8a5a13';
     c.fillText('Trăm Năm Hạnh Phúc', 512, 270);
     if (groom && bride) {
       const cut = (s: string) => (s.length > 14 ? s.slice(0, 13) + '…' : s);
       c.font = '700 66px "Be Vietnam Pro", sans-serif';
-      c.fillStyle = '#ffc2d1';
+      c.fillStyle = '#d6336c';
       c.fillText(`${cut(groom)} ♥ ${cut(bride)}`, 512, 400);
     }
     tex.needsUpdate = true;
   };
   setNames('', '');
+
+  // 2 màn hình 2 bên sân khấu chiếu ảnh cặp mèo như sảnh trong ảnh mẫu ("Our Wedding" / "Together Forever").
+  // Ảnh nằm ở public/assets/bg/ (server phục vụ ở /assets), khung vàng, đặt trước tường hoa.
+  const loader = new THREE.TextureLoader();
+  for (const [sx, img, label] of [
+    [-1, 'cap-doi-cong-hoa.jpg', 'Our Wedding'],
+    [1, 'co-dau-meo-trang.jpg', 'Together Forever'],
+  ] as const) {
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(2.9, 2.9, 0.1), mat('#c9a227'));
+    frame.position.set(sx * 6.6, STAGE_Y + 3.3, -26.66);
+    scene.add(frame);
+    // mặc định là biển canvas "🐾 + chữ" cho đẹp ngay cả khi thiếu file ảnh; ảnh thật tải được thì phủ lên
+    const sc = document.createElement('canvas');
+    sc.width = 512;
+    sc.height = 512;
+    const cx = sc.getContext('2d')!;
+    cx.fillStyle = '#fdf6ec';
+    cx.fillRect(0, 0, 512, 512);
+    cx.textAlign = 'center';
+    cx.font = '110px serif';
+    cx.fillText('🐾', 256, 205);
+    cx.fillStyle = '#8a5a13';
+    cx.font = '700 52px "Be Vietnam Pro", sans-serif';
+    cx.fillText(label, 256, 320);
+    cx.fillStyle = '#d6336c';
+    cx.font = '700 40px "Be Vietnam Pro", sans-serif';
+    cx.fillText('Đám Cưới Mèo', 256, 392);
+    const fallback = new THREE.CanvasTexture(sc);
+    fallback.colorSpace = THREE.SRGBColorSpace;
+    const sm = new THREE.MeshBasicMaterial({ map: fallback });
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(2.65, 2.65), sm);
+    scr.position.set(sx * 6.6, STAGE_Y + 3.3, -26.6);
+    scene.add(scr);
+    loader.load(`/assets/bg/${img}`, (t) => {
+      t.colorSpace = THREE.SRGBColorSpace;
+      sm.map = t;
+      sm.needsUpdate = true;
+    });
+  }
 
   return { setNames, fairy, ledMat, chand };
 }

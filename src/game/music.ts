@@ -1,4 +1,7 @@
-// Nhạc nền đám cưới tự sáng tác bằng code: giai điệu chính (như hộp nhạc / sáo), piano rải hợp âm, bè trầm, chuông.
+// Nhạc nền ĐÁM CƯỚI MÈO tự sáng tác bằng code (bản nâng cấp 2026-11-07): vòng hợp âm kiểu Canon
+// (D–A–Bm–F#m–G–D–G–A, tiến trình cổ điển đã hết bản quyền từ lâu) + giai điệu GỐC viết riêng cho game.
+// Lớp nhạc: dây đệm ấm (stereo), piano rải, bè trầm + bè cello, giai điệu hộp nhạc, chuông nhà thờ
+// điểm ở đầu mỗi phần, glissando hạc cầm nối vòng lặp. Nghe thử ở trang điều khiển (nút nhạc nền).
 // Dựng sẵn thành 1 file WAV trong trình duyệt (OfflineAudioContext) rồi phát bằng <audio>, giống cách phát giọng MC:
 // trình duyệt trong LIVE Studio có thể chặn Web Audio phát trực tiếp nhưng vẫn cho <audio> phát.
 // Không dùng file nhạc ngoài nên không dính bản quyền. Chỉ phát trên trang stage; MC nói thì nhạc nhỏ xuống.
@@ -8,47 +11,47 @@ import { voice } from '../live/voice';
 const LOUD = 0.7; // lúc MC im
 const DUCK = 0.28; // lúc MC đang nói
 const LEVEL_KEY = 'meowed-music-level';
-const BPM = 72;
+const BPM = 76;
 const RATE = 32000;
 
-// 16 ô nhịp Đô trưởng, mỗi ô 1 hợp âm (nốt MIDI): bè trầm + 3 nốt rải
+// 16 ô nhịp Rê trưởng, mỗi ô 1 hợp âm (nốt MIDI): [bè trầm, 3 nốt hợp âm]
 const CHORDS: Record<string, number[]> = {
-  C: [36, 60, 64, 67],
-  G: [43, 59, 62, 67],
-  Am: [45, 60, 64, 69],
-  Em: [40, 59, 64, 67],
-  F: [41, 60, 65, 69],
+  D: [38, 62, 66, 69],
+  A: [45, 61, 64, 69],
+  Bm: [47, 62, 66, 71],
+  'F#m': [42, 61, 66, 69],
+  G: [43, 62, 67, 71],
 };
-const PROG = ['C', 'G', 'Am', 'Em', 'F', 'C', 'F', 'G', 'C', 'G', 'Am', 'Em', 'F', 'C', 'G', 'C'];
-// giai điệu chính: 4 phách mỗi ô, 0 = ngân tiếp nốt trước
+const PROG = ['D', 'A', 'Bm', 'F#m', 'G', 'D', 'G', 'A', 'D', 'A', 'Bm', 'F#m', 'G', 'D', 'A', 'D'];
+// giai điệu chính GỐC: 4 phách mỗi ô, 0 = ngân tiếp nốt trước. Nửa đầu dịu, nửa sau vút cao rồi hạ về chủ âm.
 const MELODY = [
-  [72, 76, 79, 76],
-  [74, 0, 71, 74],
-  [72, 76, 81, 79],
-  [79, 0, 76, 0],
-  [77, 76, 74, 72],
-  [76, 0, 72, 0],
-  [74, 72, 69, 72],
+  [74, 78, 81, 78],
+  [76, 0, 73, 76],
+  [74, 78, 83, 81],
+  [81, 0, 78, 0],
+  [79, 83, 81, 79],
+  [78, 0, 74, 78],
+  [79, 78, 76, 74],
+  [76, 0, 0, 0],
+  [74, 78, 81, 86],
+  [85, 0, 81, 0],
+  [83, 81, 78, 81],
+  [78, 0, 76, 0],
+  [79, 81, 83, 86],
+  [83, 81, 78, 76],
+  [74, 76, 78, 81],
   [74, 0, 0, 0],
-  [72, 76, 79, 84],
-  [83, 0, 79, 0],
-  [81, 79, 76, 79],
-  [79, 0, 0, 76],
-  [77, 81, 79, 77],
-  [76, 79, 72, 76],
-  [74, 76, 74, 71],
-  [72, 0, 0, 0],
 ];
 const ARP = [0, 1, 2, 3, 2, 1, 2, 3]; // 8 móc đơn mỗi ô: rải hợp âm lên xuống
 
 const freq = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
 
-/** Dựng cả bài (16 ô nhịp, lặp được) thành AudioBuffer */
+/** Dựng cả bài (16 ô nhịp stereo, lặp được) thành AudioBuffer */
 export async function render(): Promise<AudioBuffer> {
   const beat = 60 / BPM;
   const bar = beat * 4;
   const len = bar * PROG.length;
-  const ctx = new OfflineAudioContext(1, Math.ceil((len + 0.01) * RATE), RATE);
+  const ctx = new OfflineAudioContext(2, Math.ceil((len + 0.01) * RATE), RATE);
   const out = ctx.createGain();
   out.gain.value = 1;
   // vang nhẹ cho êm, kiểu sảnh tiệc
@@ -61,16 +64,38 @@ export async function render(): Promise<AudioBuffer> {
   rev.connect(wet);
   wet.connect(ctx.destination);
 
-  const note = (f: number, at: number, dur: number, vol: number, type: OscillatorType, attack = 0.01, partial = 0) => {
+  interface NoteOpts {
+    pan?: number;
+    attack?: number;
+    partial?: number;
+    cutoff?: number; // lowpass cho bè dây ấm
+    detune?: number; // cents, cho bè dây dày
+  }
+  const note = (f: number, at: number, dur: number, vol: number, type: OscillatorType, opts: NoteOpts = {}) => {
+    const { pan = 0, attack = 0.01, partial = 0, cutoff = 0, detune = 0 } = opts;
     const o = ctx.createOscillator();
     const g = ctx.createGain();
     o.type = type;
     o.frequency.value = f;
+    if (detune) o.detune.value = detune;
     g.gain.setValueAtTime(0, at);
     g.gain.linearRampToValueAtTime(vol, at + attack);
     g.gain.exponentialRampToValueAtTime(0.0008, at + dur);
-    o.connect(g);
-    g.connect(out);
+    let head: AudioNode = o;
+    if (cutoff) {
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = cutoff;
+      o.connect(lp);
+      head = lp;
+    }
+    head.connect(g);
+    if (pan) {
+      const p = ctx.createStereoPanner();
+      p.pan.value = pan;
+      g.connect(p);
+      p.connect(out);
+    } else g.connect(out);
     o.start(at);
     o.stop(at + dur + 0.05);
     if (partial) {
@@ -90,27 +115,53 @@ export async function render(): Promise<AudioBuffer> {
   PROG.forEach((name, b) => {
     const t0 = b * bar;
     const ch = CHORDS[name];
-    note(freq(ch[0]), t0, bar * 0.95, 0.22, 'sine', 0.02); // bè trầm
-    note(freq(ch[0] + 12), t0 + beat * 2, bar * 0.5, 0.08, 'sine', 0.02);
-    ARP.forEach((k, i) => note(freq(ch[1 + (k % 3)] + (k === 3 ? 12 : 0)), t0 + (i * beat) / 2, beat * 1.6, 0.07, 'triangle'));
-    // giai điệu: ngân tới nốt kế tiếp
+    // bè trầm: chủ âm cả ô + nốt năm ở nửa sau
+    note(freq(ch[0] + 12), t0, bar * 0.95, 0.2, 'sine', { attack: 0.02 });
+    note(freq(ch[0] + 19), t0 + beat * 2, bar * 0.45, 0.07, 'sine', { attack: 0.02 });
+    // bè dây ấm: 3 nốt hợp âm ngân cả ô, 2 lớp lệch tông nhẹ đặt 2 bên tai
+    for (const n of [ch[1], ch[2], ch[3]]) {
+      note(freq(n), t0, bar * 1.02, 0.032, 'triangle', { attack: 0.5, cutoff: 1300, pan: -0.35, detune: -5 });
+      note(freq(n), t0, bar * 1.02, 0.032, 'triangle', { attack: 0.5, cutoff: 1300, pan: 0.35, detune: 5 });
+    }
+    // bè cello: chủ âm + nốt ba, nửa ô một nốt, trầm và mềm
+    note(freq(ch[0] + 24), t0, beat * 1.9, 0.055, 'triangle', { attack: 0.12, cutoff: 900 });
+    note(freq(ch[2]), t0 + beat * 2, beat * 1.9, 0.045, 'triangle', { attack: 0.12, cutoff: 900 });
+    // piano rải hợp âm lên xuống
+    ARP.forEach((k, i) => note(freq(ch[1 + (k % 3)] + (k === 3 ? 12 : 0)), t0 + (i * beat) / 2, beat * 1.6, 0.058, 'triangle', { pan: -0.12 }));
+    // giai điệu hộp nhạc: ngân tới nốt kế tiếp
     const mel = MELODY[b];
     mel.forEach((m, i) => {
       if (!m) return;
       let hold = 1;
       while (i + hold < 4 && !mel[i + hold]) hold++;
-      note(freq(m), t0 + i * beat, beat * hold + 0.35, 0.16, 'sine', 0.03, 3.01);
+      note(freq(m), t0 + i * beat, beat * hold + 0.35, 0.15, 'sine', { attack: 0.03, partial: 3.01 });
+      note(freq(m), t0 + i * beat, beat * hold + 0.3, 0.05, 'triangle', { attack: 0.05 }); // lớp sáo mỏng đỡ dưới hộp nhạc
     });
-    // chuông lấp lánh đầu mỗi 2 ô
-    if (b % 2 === 0) note(freq(ch[3] + 24), t0, 2.2, 0.035, 'sine', 0.005, 2.76);
+    // chuông nhà thờ điểm đầu mỗi phần (ô 1 và ô 9): chủ âm + quãng tám, ngân dài
+    if (b === 0 || b === 8) {
+      note(freq(ch[0] + 24), t0, 3.6, 0.09, 'sine', { attack: 0.005, partial: 2.76, pan: 0.15 });
+      note(freq(ch[0] + 36), t0, 3.2, 0.045, 'sine', { attack: 0.005, partial: 2.76, pan: 0.15 });
+    }
+    // chuông lấp lánh cuối mỗi câu 4 ô
+    if (b % 4 === 3) note(freq(ch[3] + 24), t0 + beat * 3, 2.0, 0.03, 'sine', { attack: 0.005, partial: 2.76, pan: 0.2 });
+    // glissando hạc cầm ở 2 phách cuối ô chót, dẫn vòng lặp về ô đầu
+    if (b === PROG.length - 1) {
+      [69, 74, 78, 81, 86].forEach((m, i) => note(freq(m), t0 + beat * 2 + i * beat * 0.4, beat * 1.2, 0.05, 'sine', { attack: 0.01, partial: 3.01, pan: -0.1 + i * 0.05 }));
+    }
   });
 
   const buf = await ctx.startRendering();
-  // nâng đỉnh lên 0,9 cho đủ to
-  const d = buf.getChannelData(0);
+  // nâng đỉnh lên 0,9 cho đủ to (tính trên cả 2 kênh)
   let peak = 0;
-  for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
-  if (peak > 0) for (let i = 0; i < d.length; i++) d[i] *= 0.9 / peak;
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+  }
+  if (peak > 0)
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = 0; i < d.length; i++) d[i] *= 0.9 / peak;
+    }
   return buf;
 }
 
@@ -193,24 +244,31 @@ export async function renderDJ(): Promise<AudioBuffer> {
   return buf;
 }
 
-/** AudioBuffer (mono) -> file WAV 16-bit */
+/** AudioBuffer (mono hoặc stereo) -> file WAV 16-bit, kênh xen kẽ */
 function toWav(buf: AudioBuffer): Blob {
-  const d = buf.getChannelData(0);
-  const out = new DataView(new ArrayBuffer(44 + d.length * 2));
+  const chans = Math.min(2, buf.numberOfChannels);
+  const frames = buf.length;
+  const data = [buf.getChannelData(0), chans > 1 ? buf.getChannelData(1) : buf.getChannelData(0)];
+  const out = new DataView(new ArrayBuffer(44 + frames * chans * 2));
   const str = (o: number, s: string) => [...s].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
   str(0, 'RIFF');
-  out.setUint32(4, 36 + d.length * 2, true);
+  out.setUint32(4, 36 + frames * chans * 2, true);
   str(8, 'WAVEfmt ');
   out.setUint32(16, 16, true);
   out.setUint16(20, 1, true);
-  out.setUint16(22, 1, true);
+  out.setUint16(22, chans, true);
   out.setUint32(24, buf.sampleRate, true);
-  out.setUint32(28, buf.sampleRate * 2, true);
-  out.setUint16(32, 2, true);
+  out.setUint32(28, buf.sampleRate * chans * 2, true);
+  out.setUint16(32, chans * 2, true);
   out.setUint16(34, 16, true);
   str(36, 'data');
-  out.setUint32(40, d.length * 2, true);
-  for (let i = 0; i < d.length; i++) out.setInt16(44 + i * 2, Math.max(-1, Math.min(1, d[i])) * 0x7fff, true);
+  out.setUint32(40, frames * chans * 2, true);
+  let o = 44;
+  for (let i = 0; i < frames; i++)
+    for (let c = 0; c < chans; c++) {
+      out.setInt16(o, Math.max(-1, Math.min(1, data[c][i])) * 0x7fff, true);
+      o += 2;
+    }
   return new Blob([out], { type: 'audio/wav' });
 }
 

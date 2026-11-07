@@ -128,6 +128,7 @@ export function useGame() {
   const [likeNext, setLikeNext] = useState(GAME.likeMilestones[0]);
   const [vote, setVote] = useState<{ until: number; yes: number; no: number } | null>(null);
   const [dark, setDark] = useState(false);
+  const [announce, setAnnounce] = useState<{ title: string; sub: string; until: number } | null>(null); // băng rôn báo trước tiết mục tự dẫn
   const [pk, setPk] = useState<{ until: number; atk: number; def: number; atkName: string; defName: string } | null>(null);
   const [parents, setParents] = useState<{ groom: string; bride: string } | null>(null);
   const [top, setTop] = useState<TopRow[]>(() => topRows(loadTop()));
@@ -179,6 +180,10 @@ export function useGame() {
     parents: [null, null] as [string | null, string | null], // [phụ huynh nhà trai, nhà gái]
     giftTotal: loadTop(), // tổng xu mỗi người trong ngày (bảng Top đại gia, chỉ tính quà; làm mới trang không mất)
     djPending: false,
+    autoDir: true, // chế độ tự dẫn (mặc định BẬT): các timer sự kiện/hướng dẫn tự chạy, chủ kênh khỏi bấm điều khiển
+    nextHost: Date.now() + GAME.host.firstAfterMs,
+    hostIdx: 0,
+    lastHowTo: Date.now(),
     danceCam: [] as string[], // người gõ quẩy lúc đang nhảy DJ, chờ camera quay cận (5 giây/người)
     danceCamUntil: 0, // có quà / tim gọi nhảy lúc đang cưới: nhảy sau khi cưới xong
     chatterGap: GAME.chatterQuietMs,
@@ -948,6 +953,7 @@ export function useGame() {
       if (c.action === 'custom' && c.text === 'song') startSong();
       if (c.action === 'custom' && c.text === 'hire') s.lastHire = 0;
       if (c.action === 'custom' && c.text === 'roses') world.roseRain(300);
+      if (c.action === 'custom' && (c.text === 'auto:on' || c.text === 'auto:off')) s.autoDir = c.text === 'auto:on';
       if (!IS_STAGE) return; // chỉ trang stage làm theo lệnh có tiếng, tránh 2 giọng
       if (c.action === 'speak' && c.text) voice.say(c.text, true);
       if (c.action === 'custom' && (c.text === 'music:on' || c.text === 'music:off')) music.set(c.text === 'music:on');
@@ -1087,6 +1093,7 @@ export function useGame() {
     timers.push(
       setInterval(() => {
         const now = Date.now();
+        if (!s.autoDir) return;
         if (weddingBusy() || showBusy() || s.queue.length || now - s.lastActivity < GAME.autoAfterMs || now - s.lastAuto < GAME.autoEveryMs || voice.waiting > 0) return;
         const cast = GAME.cast.map((_, i) => `cast-${i}`).filter((id) => world.has(id)).sort(() => Math.random() - 0.5);
         if (cast.length < 2) return;
@@ -1114,7 +1121,7 @@ export function useGame() {
     // Tuyển ngẫu nhiên 1 người xem (không phải dàn khách quen) làm nhân viên bưng mâm hoặc vũ công
     timers.push(
       setInterval(() => {
-        if (Date.now() - s.lastHire < GAME.hireEveryMs || voice.waiting > 2 || inCeremony()) return;
+        if (!s.autoDir || Date.now() - s.lastHire < GAME.hireEveryMs || voice.waiting > 2 || inCeremony()) return;
         const busy = new Set([s.w?.ids.groom, s.w?.ids.bride]);
         const pool = world.ids().filter((id) => !id.startsWith('cast-') && !id.startsWith('ev-') && !busy.has(id));
         if (!pool.length) return;
@@ -1129,7 +1136,7 @@ export function useGame() {
     timers.push(
       setInterval(() => {
         const ph = s.w?.phase;
-        if (Date.now() - s.lastDj < GAME.djEveryMs || (ph && ph !== 'after') || s.duyen || s.vote || world.djOn) return;
+        if (!s.autoDir || Date.now() - s.lastDj < GAME.djEveryMs || (ph && ph !== 'after') || s.duyen || s.vote || world.djOn) return;
         startDj();
       }, 5000),
     );
@@ -1137,7 +1144,7 @@ export function useGame() {
     timers.push(
       setInterval(() => {
         const ph = s.w?.phase;
-        if (Date.now() < s.nextEventAt || (ph && ph !== 'after') || s.duyen || s.vote || voice.waiting > 1) return;
+        if (!s.autoDir || Date.now() < s.nextEventAt || (ph && ph !== 'after') || s.duyen || s.vote || voice.waiting > 1) return;
         const [lo, hi] = GAME.eventEveryMs;
         s.nextEventAt = Date.now() + lo + Math.random() * (hi - lo);
         runEvent();
@@ -1147,7 +1154,7 @@ export function useGame() {
     timers.push(
       setInterval(() => {
         const ph = s.w?.phase;
-        if (s.duyen || (ph && ph !== 'after') || Date.now() - s.lastDuyen < GAME.duyen.everyMs || world.count < 2) return;
+        if (!s.autoDir || s.duyen || (ph && ph !== 'after') || Date.now() - s.lastDuyen < GAME.duyen.everyMs || world.count < 2) return;
         startDuyen();
       }, 5000),
     );
@@ -1155,7 +1162,7 @@ export function useGame() {
     timers.push(
       setInterval(() => {
         const ph = s.w?.phase;
-        if (s.duyen || world.djOn || world.singing || (ph && ph !== 'after') || Date.now() - s.lastPair < GAME.pairEveryMs || voice.waiting > 1) return;
+        if (!s.autoDir || s.duyen || world.djOn || world.singing || (ph && ph !== 'after') || Date.now() - s.lastPair < GAME.pairEveryMs || voice.waiting > 1) return;
         const p = world.pickPair();
         if (!p) return;
         s.lastPair = Date.now() + Math.random() * 20_000; // lệch nhịp cho tự nhiên
@@ -1174,9 +1181,36 @@ export function useGame() {
       }, 3000),
     );
     if (IS_STAGE) {
+      // băng rôn báo trước tự ẩn khi hết giờ
+      timers.push(setInterval(() => setAnnounce((a) => (a && Date.now() > a.until ? null : a)), 1000));
+      // Tự dẫn: luân phiên party / mưa hoa hồng / xe hoa CÓ BÁO TRƯỚC (MC + băng rôn đếm ngược),
+      // và nhắc cách chơi cho người mới khi sảnh rảnh — chủ kênh không cần bấm điều khiển.
       timers.push(
         setInterval(() => {
-          if (inCeremony()) return;
+          if (!s.autoDir) return;
+          const now = Date.now();
+          const busyShow = weddingBusy() || world.djOn || world.singing || !!s.duyen || !!s.vote || !!s.pk;
+          if (!busyShow && now - s.lastHowTo > GAME.host.howToEveryMs && voice.quietForMs() > 4000) {
+            s.lastHowTo = now;
+            voice.sayMinor(pick(GAME.howTo)!);
+          }
+          if (busyShow || inCeremony() || now < s.nextHost) return;
+          s.nextHost = now + GAME.host.everyMinMs + Math.random() * (GAME.host.everyMaxMs - GAME.host.everyMinMs);
+          const kinds = ['party', 'roses', 'car'] as const;
+          const kind = kinds[s.hostIdx++ % kinds.length];
+          const [title, sub] = GAME.hostBanner[kind];
+          setAnnounce({ title, sub, until: now + GAME.host.teaseLeadMs + 5000 });
+          voice.say(pick(GAME.hostTease[kind])!, false);
+          setTimeout(() => {
+            if (kind === 'party') world.partyAll(10_000);
+            else if (kind === 'roses') world.roseRain(300);
+            else world.weddingCar();
+          }, GAME.host.teaseLeadMs);
+        }, 5000),
+      );
+      timers.push(
+        setInterval(() => {
+          if (!s.autoDir || inCeremony()) return;
           const n = s.recent.latest(3, GAME.shareReminderEveryMs);
           voice.sayMinor(n.length ? GAME.shareWithNames(joinNames(n)) : pick(GAME.shareLines)!);
         }, GAME.shareReminderEveryMs),
@@ -1201,7 +1235,7 @@ export function useGame() {
     return () => clearTimeout(t);
   }, [lastGift]);
 
-  return { status, channelName, lastGift, likeProgress, likeNext, guestCount, view, queueLen, married, duyen, nguyen, stageCount, vote, dark, pk, parents, top, busy };
+  return { status, channelName, lastGift, likeProgress, likeNext, guestCount, view, queueLen, married, duyen, nguyen, stageCount, vote, dark, pk, parents, top, busy, announce };
 }
 
 export type GameState = ReturnType<typeof useGame>;

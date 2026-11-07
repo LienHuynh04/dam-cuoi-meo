@@ -19,7 +19,7 @@ Ai cũng cầu hôn được người khác trong phòng. Người kia gõ đồ
 - **Thả tim.** Đủ 300 tim thì cả sảnh đứng dậy nhảy, đèn đổi màu, MC hô "Một, hai, ba, dô!".
 - **Hai MC đối đáp.** Anh MC giọng Edge NamMinh, chị MC giọng HoaiMy, thay nhau nói câu ngắn, nhiều tiếng hô. Câu rút theo kiểu bốc bài, hết một vòng mới lặp lại nên ít bị nghe trùng. Tên lạ kiểu `𝑵𝒈𝒐̣𝒄 𝑨𝒏𝒉` đọc thành "Ngọc Anh", tên tục thì gọi bằng username. MC không đọc nguyên văn comment.
 - **Bảng tên và bong bóng chat.** Trên đầu mỗi người có avatar (chưa có ảnh thì hiện chữ cái đầu), tên và danh hiệu: 💍 Đã cưới…, 🦹 Siêu trộm dâu, 💔 Bị từ chối, 🧵 Tơ hồng với… Comment hiện thành bong bóng trên đầu, từ bậy được che.
-- **Nhạc nền tự tạo.** Piano rải hợp âm và chuông nhẹ tạo bằng Web Audio, không dùng file nhạc nên không lo bản quyền. MC nói thì nhạc tự nhỏ xuống.
+- **Nhạc nền tự tạo.** Bản nhạc cưới stereo soạn bằng code (Web Audio): vòng hợp âm kiểu Canon với giai điệu gốc, dây đệm ấm, piano rải, chuông nhà thờ — không dùng file nhạc nên không lo bản quyền. MC nói thì nhạc tự nhỏ xuống.
 - **Hợp bản mobile TikTok.** Chữ và bảng nằm trong vùng không bị TikTok cắt hai bên và không bị huy hiệu kênh che.
 
 ## Cách chơi (dán vào phần ghim của live)
@@ -67,7 +67,7 @@ Giữ cửa sổ `BAT-LIVE.bat` mở suốt buổi live, đóng nó là tắt ga
 Trang `localhost:3020` gồm:
 
 - Kết nối TikTok, ô **Đọc ngay** để MC đọc câu bạn gõ, thanh **Tốc độ giọng** (0.8–1.5, mặc định 1.25), đổi tên kênh, nút Reset game.
-- **Điều khiển:** dọn sân khấu, cho cả sảnh quẩy, gọi Nguyệt Lão Mèo se duyên ngay, bật/tắt nhạc nền, thanh âm lượng nhạc (0–200%), nghe thử 2 giọng MC.
+- **Điều khiển:** dọn sân khấu, cho cả sảnh quẩy, gọi Nguyệt Lão Mèo se duyên ngay, bật/tắt nhạc nền, thanh âm lượng nhạc (0–200%), nghe thử 2 giọng MC. **Không bắt buộc bấm gì cả:** chế độ **Tự dẫn chương trình** bật mặc định — game tự mở sự kiện, MC + băng rôn trên sân khấu báo trước tiết mục kèm cách tham gia, và nhắc cách chơi cho người mới (nút tắt/bật nằm đầu hàng Điều khiển).
 - **Thử khách / Quà:** nút giả lập để thử khi chưa live: cầu hôn rồi đồng ý, cầu hôn bị từ chối, cưới rồi bị cướp, 6 người se duyên, "Live giả" 30 khách tự chơi, các mức quà và 300 tim.
 - Bản xem trước sân khấu bên phải (im lặng).
 
@@ -108,7 +108,7 @@ Nếu đã clone bằng git: chạy `git pull` trong thư mục rồi mở lại
 
 ## Tài nguyên
 
-Toàn bộ hình ảnh (sảnh, nhân vật, chó mèo, hoa, sân khấu) dựng bằng code trong `src/game/world/`, không dùng file ảnh hay mô hình 3D. Nhạc nền cũng tạo bằng code. Lời nguyện 1–10 trong `seDuyen.ts` do chủ kênh viết.
+Toàn bộ hình ảnh (sảnh, nhân vật, chó mèo, hoa, sân khấu) dựng bằng code trong `src/game/world/`, không dùng mô hình 3D ngoài. Ngoại lệ duy nhất: 2 màn hình 2 bên sân khấu chiếu ảnh cặp mèo trong `public/assets/bg/` (`cap-doi-cong-hoa.jpg`, `co-dau-meo-trang.jpg`; thiếu file thì tự hiện biển 🐾 "Our Wedding / Together Forever"). Thư mục đó còn giữ bộ ảnh mẫu chủ kênh gửi để làm chuẩn phong cách: `sanh-cuoi-lon.png` (sảnh mẫu), `collage-tiec-cuoi.png`, `collage-khoanh-khac-cuoi.png`, `cap-doi-meo-cam.jpg`, `cap-doi-meo-trang-vang.jpg`, `cap-doi-loi-di-hoa.jpg`, `co-dau-meo-trang.jpg`. Nhạc nền cũng tạo bằng code. Lời nguyện 1–10 trong `seDuyen.ts` do chủ kênh viết.
 
 ## Giấy phép
 

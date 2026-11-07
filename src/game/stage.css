@@ -270,6 +270,17 @@
 .dc-duyen {
   background: linear-gradient(90deg, #c8102e, #ff4d6d);
 }
+
+/* Tự dẫn: băng rôn báo trước tiết mục (cam → hồng, dòng phụ vàng nhạt) */
+.dc-auto {
+  background: linear-gradient(90deg, #d97706, #db2777);
+}
+.dc-auto small {
+  display: block;
+  font-size: 25px;
+  font-weight: 600;
+  color: #ffe9a8;
+}
 .dc-nguyen {
   position: absolute;
   top: 524px;

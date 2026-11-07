@@ -26,6 +26,7 @@ const two = () => {
 
 export function GameControls({ stageCount = 0 }: { stageCount?: number }) {
   const [auto, setAuto] = useState(false);
+  const [autoDir, setAutoDir] = useState(true); // tự dẫn chương trình (mặc định BẬT phía stage)
   const [musicOn, setMusicOn] = useState(true);
   const [musicVol, setMusicVol] = useState(() => {
     try {
@@ -67,7 +68,20 @@ export function GameControls({ stageCount = 0 }: { stageCount?: number }) {
           ⚠ Đang có {stageCount} trang stage mở cùng lúc (2 nguồn Link trong LIVE Studio hoặc thêm tab ?view=stage). Chỉ trang mở sau cùng phát tiếng; nên xoá bớt nguồn thừa.
         </p>
       )}
+      <p className="text-xs leading-relaxed text-slate-400">
+        🤖 <b className="text-slate-200">Tự dẫn đang BẬT mặc định</b> — mở trang sân khấu là game tự chạy: tự mở đám cưới khi phòng vắng, DJ, sự kiện bất ngờ, Nguyệt Lão Mèo se duyên, và luân phiên quẩy cả sảnh / mưa hoa hồng / xe hoa <b className="text-slate-200">có MC + băng rôn báo trước</b> kèm cách tham gia, cộng nhắc cách chơi cho người mới. Bạn <b className="text-slate-200">không cần bấm gì</b>; các nút dưới đây chỉ để can thiệp tay khi muốn.
+      </p>
       <Row label="Điều khiển">
+        <B
+          on={autoDir}
+          onClick={() => {
+            const next = !autoDir;
+            setAutoDir(next);
+            void sendControl('custom', next ? 'auto:on' : 'auto:off');
+          }}
+        >
+          {autoDir ? '🤖 Tự dẫn chương trình: BẬT' : '🤖 Tự dẫn chương trình: TẮT'}
+        </B>
         <B onClick={() => void sendControl('custom', 'clearStage')}>✖ Dọn sân khấu</B>
         <B onClick={() => void sendControl('custom', 'party')}>🎉 Cả sảnh quẩy</B>
         <B onClick={() => void sendControl('custom', 'duyen')}>🧵 Nguyệt Lão Mèo se duyên</B>
