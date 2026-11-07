@@ -108,6 +108,7 @@ export function GameControls({ stageCount = 0 }: { stageCount?: number }) {
         </label>
         <B onClick={() => testVoice()}>🔊 Thử 2 giọng MC (trang này)</B>
         <B onClick={() => void (window as unknown as { cMusicPreview: () => Promise<void> }).cMusicPreview()}>🎵 Nghe thử nhạc nền (trang này)</B>
+        <B onClick={() => void (window as unknown as { cDJPreview: () => Promise<void> }).cDJPreview()}>🎧 Nghe thử bản remix DJ (trang này)</B>
       </Row>
       <Row label="Thử khách">
         <B onClick={() => setAuto((a) => !a)} on={auto}>

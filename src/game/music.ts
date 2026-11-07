@@ -165,15 +165,29 @@ export async function render(): Promise<AudioBuffer> {
   return buf;
 }
 
-/** Nhạc DJ 128 BPM: trống 4 phách, vỗ tay, hi-hat, bass nảy, hợp âm giật (8 ô nhịp lặp) */
+/** REMIX của chính bản nhạc cưới (2026-11-07): lấy đúng vòng Canon + giai điệu GỐC của render() ở trên,
+ * phối lại kiểu dance 128 BPM stereo cho đoạn Quẩy DJ — kick 4 phách, vỗ tay, bass dồn dập, hợp âm giật,
+ * lead gảy giai điệu cưới có echo. 16 ô: 4 ô mở nhẹ, 8 ô cao trào, 4 ô cuối vút cao + dồn trống nối vòng.
+ * Vẫn là nhạc tự soạn bằng code, không dính bản quyền. */
 export async function renderDJ(): Promise<AudioBuffer> {
   const bpm = 128;
   const beat = 60 / bpm;
-  const bars = 8;
+  const bars = 16;
   const len = beat * 4 * bars;
-  const ctx = new OfflineAudioContext(1, Math.ceil((len + 0.01) * RATE), RATE);
+  const ctx = new OfflineAudioContext(2, Math.ceil((len + 0.01) * RATE), RATE);
   const out = ctx.createGain();
   out.connect(ctx.destination);
+  // echo 3/8 phách cho tiếng lead gảy (đặc trưng nhạc remix)
+  const echo = ctx.createDelay(1);
+  echo.delayTime.value = beat * 0.75;
+  const echoFb = ctx.createGain();
+  echoFb.gain.value = 0.28;
+  const echoWet = ctx.createGain();
+  echoWet.gain.value = 0.35;
+  echo.connect(echoFb);
+  echoFb.connect(echo);
+  echo.connect(echoWet);
+  echoWet.connect(out);
   const noise = ctx.createBuffer(1, RATE, RATE);
   const nd = noise.getChannelData(0);
   for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
@@ -220,27 +234,81 @@ export async function renderDJ(): Promise<AudioBuffer> {
     o.start(t);
     o.stop(t + dur + 0.02);
   };
-  // Am - F - C - G
-  const roots = [57, 53, 48, 55];
-  const triads = [[69, 72, 76], [69, 72, 77], [67, 72, 76], [67, 71, 74]];
-  for (let b = 0; b < bars; b++) {
+  // lead gảy giai điệu (một phần tín hiệu qua echo), pan nhẹ cho có chiều ngang
+  const pluck = (f: number, t: number, dur: number, vol: number, pan = 0) => {
+    const o = ctx.createOscillator();
+    o.type = 'square';
+    o.frequency.value = f;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 3200;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(lp);
+    lp.connect(g);
+    const p = ctx.createStereoPanner();
+    p.pan.value = pan;
+    g.connect(p);
+    p.connect(out);
+    g.connect(echo);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  };
+  // vòng Canon + giai điệu gốc của bản nhạc cưới (PROG / CHORDS / MELODY ở trên): remix giữ nguyên DNA bài hát
+  PROG.forEach((name, b) => {
     const t0 = b * beat * 4;
-    const ch = b % 4;
+    const ch = CHORDS[name];
+    const root = ch[0] + 12; // đúng bè trầm của bản gốc
+    const full = b >= 4; // 4 ô đầu mở nhẹ, từ ô 5 vào cao trào
     for (let i = 0; i < 4; i++) {
       const t = t0 + i * beat;
       kick(t);
-      hiss(t + beat / 2, 0.08, 0.25, 7000); // hi-hat giữa phách
-      if (i % 2 === 1) hiss(t, 0.18, 0.45, 1200); // vỗ tay phách 2, 4
-      synth(freq(roots[ch] - 12), t + beat / 2, beat * 0.45, 0.35, 600); // bass nảy
-      if (i % 2 === 0 || b % 2 === 1) for (const n of triads[ch]) synth(freq(n), t + (i % 2 ? beat * 0.75 : 0), beat * 0.3, 0.07, 2600);
+      hiss(t + beat / 2, 0.1, 0.22, 8000); // hi-hat lệch phách
+      if (full && i % 2 === 1) hiss(t, 0.16, 0.4, 1200); // vỗ tay phách 2, 4
+      if (full) for (let k = 1; k < 4; k += 2) hiss(t + (k * beat) / 4, 0.04, 0.07, 9000); // hat móc kép lặng
     }
-    if (b === bars - 1) for (let k = 0; k < 8; k++) hiss(t0 + beat * 2 + (k * beat) / 4, 0.1, 0.15 + k * 0.04, 3000); // dồn trống cuối vòng
-  }
+    // bass dồn dập: móc tám liên tục, nhấn quãng tám ở nhịp lẻ
+    for (let k = 0; k < 8; k++) synth(freq(root + (k % 4 === 2 ? 12 : 0)), t0 + k * beat * 0.5, beat * 0.42, full ? 0.3 : 0.22, 550);
+    // hợp âm giật lệch phách bằng đúng 3 nốt hợp âm gốc, 2 lớp lệch tông nhẹ cho dày tiếng
+    if (full)
+      for (let i = 0; i < 4; i++)
+        for (const n of [ch[1], ch[2], ch[3]]) {
+          synth(freq(n), t0 + i * beat + beat / 2, beat * 0.28, 0.05, 2600);
+          synth(freq(n) * 1.004, t0 + i * beat + beat / 2, beat * 0.28, 0.04, 2600);
+        }
+    // giai điệu cưới: 4 ô đầu gảy nhẹ, ô 5–12 lead chính, ô 13–16 thêm lớp vút cao
+    const mel = MELODY[b];
+    mel.forEach((m, i) => {
+      if (!m) return;
+      let hold = 1;
+      while (i + hold < 4 && !mel[i + hold]) hold++;
+      const t = t0 + i * beat;
+      const dur = beat * hold * 0.92;
+      if (b < 4) pluck(freq(m), t, dur, 0.07);
+      else {
+        pluck(freq(m), t, dur, 0.13);
+        if (b >= 12) pluck(freq(m + 12), t, dur, 0.05, 0.15);
+      }
+    });
+    // dồn trống ở ô cuối, nối vòng lặp về ô 1
+    if (b === bars - 1) {
+      for (let k = 0; k < 8; k++) hiss(t0 + beat * 2 + (k * beat) / 4, 0.09, 0.12 + k * 0.05, 2500);
+      for (let k = 0; k < 16; k++) hiss(t0 + (k * beat) / 4, 0.05, 0.05 + k * 0.012, 5000);
+    }
+  });
   const buf = await ctx.startRendering();
-  const d = buf.getChannelData(0);
+  // nâng đỉnh 0,92 trên cả 2 kênh
   let peak = 0;
-  for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
-  if (peak > 0) for (let i = 0; i < d.length; i++) d[i] *= 0.92 / peak;
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+  }
+  if (peak > 0)
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = 0; i < d.length; i++) d[i] *= 0.92 / peak;
+    }
   return buf;
 }
 
@@ -366,6 +434,12 @@ export const music = new Music();
 // nghe thử ở trang điều khiển: window.cMusicPreview()
 (window as unknown as { cMusicPreview: () => Promise<void> }).cMusicPreview = async () => {
   const a = new Audio(URL.createObjectURL(toWav(await render())));
+  a.volume = 0.6;
+  void a.play();
+};
+// nghe thử bản remix DJ ở trang điều khiển: window.cDJPreview()
+(window as unknown as { cDJPreview: () => Promise<void> }).cDJPreview = async () => {
+  const a = new Audio(URL.createObjectURL(toWav(await renderDJ())));
   a.volume = 0.6;
   void a.play();
 };

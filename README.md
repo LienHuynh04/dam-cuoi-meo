@@ -19,7 +19,7 @@ Ai cũng cầu hôn được người khác trong phòng. Người kia gõ đồ
 - **Thả tim.** Đủ 300 tim thì cả sảnh đứng dậy nhảy, đèn đổi màu, MC hô "Một, hai, ba, dô!".
 - **Hai MC đối đáp.** Anh MC giọng Edge NamMinh, chị MC giọng HoaiMy, thay nhau nói câu ngắn, nhiều tiếng hô. Câu rút theo kiểu bốc bài, hết một vòng mới lặp lại nên ít bị nghe trùng. Tên lạ kiểu `𝑵𝒈𝒐̣𝒄 𝑨𝒏𝒉` đọc thành "Ngọc Anh", tên tục thì gọi bằng username. MC không đọc nguyên văn comment.
 - **Bảng tên và bong bóng chat.** Trên đầu mỗi người có avatar (chưa có ảnh thì hiện chữ cái đầu), tên và danh hiệu: 💍 Đã cưới…, 🦹 Siêu trộm dâu, 💔 Bị từ chối, 🧵 Tơ hồng với… Comment hiện thành bong bóng trên đầu, từ bậy được che.
-- **Nhạc nền tự tạo.** Bản nhạc cưới stereo soạn bằng code (Web Audio): vòng hợp âm kiểu Canon với giai điệu gốc, dây đệm ấm, piano rải, chuông nhà thờ — không dùng file nhạc nên không lo bản quyền. MC nói thì nhạc tự nhỏ xuống.
+- **Nhạc nền tự tạo.** Bản nhạc cưới stereo soạn bằng code (Web Audio): vòng hợp âm kiểu Canon với giai điệu gốc, dây đệm ấm, piano rải, chuông nhà thờ — không dùng file nhạc nên không lo bản quyền. MC nói thì nhạc tự nhỏ xuống. Đoạn **Quẩy DJ** phát **bản remix của chính giai điệu cưới** (128 BPM, kick 4 phách, bass dồn, lead gảy có echo) — nghe thử cả 2 bản ngay ở trang điều khiển.
 - **Hợp bản mobile TikTok.** Chữ và bảng nằm trong vùng không bị TikTok cắt hai bên và không bị huy hiệu kênh che.
 
 ## Cách chơi (dán vào phần ghim của live)

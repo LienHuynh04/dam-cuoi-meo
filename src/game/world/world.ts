@@ -275,6 +275,9 @@ class World {
   // ---------- gắn vào trang ----------
   attach(gl: HTMLCanvasElement, overlay: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: true });
+    // nén tông kiểu điện ảnh + phơi sáng ấm hơn một chút: màu da lông/hoa đỡ "phẳng nhựa", gần tông ảnh mẫu
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.12;
     this.renderer.setPixelRatio(1);
     this.renderer.setSize(W, H, false);
     this.overlay = overlay.getContext('2d');
@@ -1618,11 +1621,12 @@ class World {
     }
     this.smoke.update(dt);
 
-    // kim tuyến bạc rơi lấp lánh liên tục
+    // cánh hoa hồng rơi lả tả liên tục (thay kim tuyến bạc cho đúng chất đám cưới như ảnh mẫu)
     this.glitter += dt * 14 * this.quality;
     while (this.glitter >= 1) {
       this.glitter--;
-      this.fx.add(v((Math.random() - 0.5) * 24, 9 + Math.random() * 2, -24 + Math.random() * 34), v(0, -0.55, 0), Math.random() < 0.7 ? '#ffffff' : '#dfe8ff', 16, 0.35);
+      const petal = ['#ffffff', '#ffffff', '#ffc2d1', '#ff8fab', '#ffe5ec'][Math.floor(Math.random() * 5)];
+      this.fx.add(v((Math.random() - 0.5) * 24, 9 + Math.random() * 2, -24 + Math.random() * 34), v(0, -0.45, 0), petal, 16, 0.5);
     }
     // pháo giấy sân khấu mỗi 40 giây cho cảnh luôn có điểm nhấn
     if (this.t - this.lastCannon > 40) this.cannons(90);

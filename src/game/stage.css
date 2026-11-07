@@ -16,6 +16,28 @@
   height: 100%;
 }
 
+/* lớp phủ màu điện ảnh trên cảnh 3D (dưới mọi chữ/bảng): sáng ấm phía trên, vignette nhẹ ở góc */
+.dc-grade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 196, 110, 0.1), rgba(255, 196, 110, 0) 34%),
+    radial-gradient(ellipse 120% 90% at 50% 42%, rgba(0, 0, 0, 0) 62%, rgba(94, 44, 18, 0.2) 100%);
+}
+.dc-title,
+.dc-bar,
+.dc-side-col,
+.dc-pk,
+.dc-steal,
+.dc-parents,
+.dc-gift,
+.dc-queue-pill,
+.dc-dark {
+  z-index: 2;
+}
+
 .dc-title {
   position: absolute;
   top: 18px;

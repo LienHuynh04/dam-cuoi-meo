@@ -193,7 +193,7 @@ export function buildHall(scene: THREE.Scene) {
     const arch = new THREE.TorusGeometry(r, 0.12, 8, 30, Math.PI);
     put('#dfe3ea', arch, 0, cy, cz);
     for (const sx of [-1, 1]) put('#dfe3ea', new THREE.CylinderGeometry(0.12, 0.14, cy, 8), sx * r, cy / 2, cz);
-    const ball = new THREE.SphereGeometry(0.2, 8, 6);
+    const ball = new THREE.SphereGeometry(0.23, 8, 6);
     for (let i = 0; i <= n; i++) {
       const a = (i / n) * Math.PI;
       const c = ['#ffffff', '#ff8fab', '#ffc2d1', '#ff4d6d', '#ffe5ec'][i % 5];
@@ -208,7 +208,7 @@ export function buildHall(scene: THREE.Scene) {
 
   // hoa dọc 2 bên thảm đỏ
   const stand = new THREE.CylinderGeometry(0.05, 0.1, 0.9, 6);
-  const bunch = new THREE.SphereGeometry(0.26, 8, 6);
+  const bunch = new THREE.SphereGeometry(0.34, 8, 6);
   for (let z = GATE_Z - 2; z > STAGE_FRONT + 1; z -= 3.3)
     for (const sx of [-1, 1]) {
       put('#e6e9ef', stand, sx * (AISLE_HALF + 0.3), 0.45, z);
@@ -218,7 +218,7 @@ export function buildHall(scene: THREE.Scene) {
     }
 
   // ---------- sân khấu VIP: tường hoa, cột hoa, đèn chùm, chân nến, bánh cưới, tháp ly, loa, bàn DJ ----------
-  const fball = new THREE.SphereGeometry(0.17, 7, 5);
+  const fball = new THREE.SphereGeometry(0.2, 7, 5);
   const FL = ['#ffffff', '#ffc2d1', '#ff8fab', '#ffe5ec', '#ffffff', '#f8f9fb'];
   // tường hoa sau cổng (2 mảng hai bên phông chữ)
   for (const sx of [-1, 1])

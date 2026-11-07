@@ -34,6 +34,8 @@ export function GameStage({ game }: { game: GameState }) {
     <div className="dc-stage">
       <canvas ref={gl} width={W} height={H} className="dc-canvas" />
       <canvas ref={ov} width={W} height={H} className="dc-canvas-2d" />
+      {/* lớp phủ màu điện ảnh: quầng sáng ấm trên cao + tối nhẹ 4 góc, cho khung hình "như ảnh" hơn */}
+      <div className="dc-grade" />
 
       {/* mất điện: phủ đen sảnh, chữ phía trên vẫn hiện */}
       <div className={`dc-dark ${game.dark ? 'on' : ''}`} />

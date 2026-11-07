@@ -137,11 +137,37 @@ const LEG = 0.46; // chiều cao hông
 const SEAT = 0.48; // mặt ghế
 
 const mats = new Map<string, THREE.MeshLambertMaterial>();
+// vân hạt mịn dùng chung cho mọi bề mặt: phá cảm giác "nhựa phẳng" của màu đơn, lông/vải/đá đều có chất hơn.
+// Hạt gần trắng (236–255) nên chỉ tạo vân rất nhẹ, không làm bẩn màu gốc.
+let grainTex: THREE.Texture | null = null;
+function grain() {
+  if (!grainTex) {
+    const c = document.createElement('canvas');
+    c.width = 256;
+    c.height = 256;
+    const x = c.getContext('2d')!;
+    const img = x.createImageData(256, 256);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = 236 + Math.floor(Math.random() * 20);
+      img.data[i] = v;
+      img.data[i + 1] = v;
+      img.data[i + 2] = v;
+      img.data[i + 3] = 255;
+    }
+    x.putImageData(img, 0, 0);
+    grainTex = new THREE.CanvasTexture(c);
+    grainTex.wrapS = THREE.RepeatWrapping;
+    grainTex.wrapT = THREE.RepeatWrapping;
+    grainTex.colorSpace = THREE.SRGBColorSpace;
+  }
+  return grainTex;
+}
+
 export function mat(color: string, opacity = 1) {
   const k = color + opacity;
   let m = mats.get(k);
   if (!m) {
-    m = new THREE.MeshLambertMaterial({ color, transparent: opacity < 1, opacity, depthWrite: opacity >= 1 });
+    m = new THREE.MeshLambertMaterial({ color, map: grain(), transparent: opacity < 1, opacity, depthWrite: opacity >= 1 });
     mats.set(k, m);
   }
   return m;
