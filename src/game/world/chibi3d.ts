@@ -420,6 +420,12 @@ export class Chibi {
       p.rotation.x = 0.55;
       o.add(p);
     }
+    // ngực lông xù màu kem cho mèo mặc vest/sơ mi (mèo trong ảnh mẫu phần lớn có ngực trắng xù)
+    if (L.body === 'suit' || L.body === 'shirt') {
+      const cf = mesh(G.cheekFluff, '#f7ead9', 0, 0.52, 0.13);
+      cf.scale.set(1.15, 1.3, 0.55);
+      o.add(cf);
+    }
     // tay
     for (const arm of [this.armL, this.armR]) {
       arm.add(mesh(G.arm, sleeve, 0, -0.19, 0));

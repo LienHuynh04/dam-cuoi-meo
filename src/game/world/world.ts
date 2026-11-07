@@ -1,5 +1,9 @@
 // Thế giới 3D (Three.js, ngoài React): khách đi lại, ngồi bàn, cặp đôi lên lễ đường, camera lia, hiệu ứng.
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { Chibi, guestLook, npcLook, weddingLook, type Look, type Pose, type WeddingSet } from './chibi3d';
 import { Pets } from './pets3d';
 import { AISLE_HALF, buildHall, GATE_Z, SEATS, STAGE_FRONT, STAGE_Y, STAGE_Z, STANDING, TABLES, type Seat } from './hall';
@@ -56,6 +60,8 @@ export interface WorldEvents {
 class World {
   events: WorldEvents = {};
   private renderer: THREE.WebGLRenderer | null = null;
+  private composer: EffectComposer | null = null; // hậu kỳ bloom (đèn/pha lê phát sáng như ảnh chụp)
+  private bloomOn = true; // máy chậm (quality tụt) thì tự tắt hẳn cho nhẹ
   private overlay: CanvasRenderingContext2D | null = null;
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(46, W / H, 0.1, 120);
@@ -88,7 +94,7 @@ class World {
   private ring: THREE.Mesh;
   private ringAnim: { from: V3; to: V3; t0: number } | null = null;
   private shadowGeo = new THREE.CircleGeometry(0.32, 16);
-  private shadowMat = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.16, depthWrite: false });
+  private shadowMat = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.24, depthWrite: false });
   private glow: THREE.Mesh;
   private beams: THREE.Mesh[] = [];
   private smoke: Smoke;
@@ -128,11 +134,17 @@ class World {
   constructor() {
     const s = this.scene;
     s.background = new THREE.Color('#e9d8bc');
-    s.fog = new THREE.Fog('#e9d8bc', 34, 70);
+    s.fog = new THREE.Fog('#e9d8bc', 30, 64);
     s.add(this.hemi);
     const sun = this.sun; // buổi tối: đèn trần ấm thay cho nắng chiều
     sun.position.set(4, 12, 10);
     s.add(sun);
+    // 2 đèn điểm ấm: vũng sáng dưới đèn chùm sân khấu + giữa sảnh, cho cảnh có chiều sâu như ảnh chụp
+    const glowStage = new THREE.PointLight('#ffd9a8', 30, 26, 1.6);
+    glowStage.position.set(0, 6.4, STAGE_Z + 2);
+    const glowHall = new THREE.PointLight('#ffca7a', 26, 32, 1.6);
+    glowHall.position.set(0, 6.8, -4);
+    s.add(glowStage, glowHall);
     this.hall = buildHall(s);
 
     // 2 MC: anh MC vest đen nơ đỏ, chị MC áo dài hồng
@@ -279,6 +291,17 @@ class World {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.12;
     this.renderer.setPixelRatio(1);
+    // hậu kỳ BLOOM: điểm sáng (đèn chùm pha lê, dây đèn, LED sân khấu) loé sáng mềm như ảnh chụp tiệc.
+    // Khử răng cưa bằng render target 4xMSAA; lỗi thì tự bỏ qua, vẽ thẳng như cũ.
+    try {
+      const rt = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
+      this.composer = new EffectComposer(this.renderer, rt);
+      this.composer.addPass(new RenderPass(this.scene, this.camera));
+      this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.32, 0.65, 0.82));
+      this.composer.addPass(new OutputPass());
+    } catch {
+      this.composer = null;
+    }
     this.renderer.setSize(W, H, false);
     this.overlay = overlay.getContext('2d');
     this.last = performance.now();
@@ -1445,6 +1468,7 @@ class World {
     if (this.slow > 2 && this.quality > 0.4) {
       this.quality = Math.max(0.4, this.quality - 0.2);
       this.slow = 0;
+      if (this.quality < 0.7) this.bloomOn = false; // máy chậm: tắt bloom hẳn, giữ khung hình mượt
       this.renderer?.setPixelRatio(this.quality < 0.7 ? 0.75 : 1);
       this.renderer?.setSize(W, H, false);
     } else if (this.slow === 0 && dt < 1 / 55 && Math.random() < dt / 6 && this.quality < 1) {
@@ -1649,7 +1673,8 @@ class World {
 
     this.updateCamera(dt);
     if (!draw) return;
-    this.renderer?.render(this.scene, this.camera);
+    if (this.composer && this.bloomOn) this.composer.render();
+    else this.renderer?.render(this.scene, this.camera);
     this.drawOverlay(now);
     if (this.debugFps && this.overlay) {
       // ?view=stage&debug=1: số khung/giây thật để soi máy trong LIVE Studio
